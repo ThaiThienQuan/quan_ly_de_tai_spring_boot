@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý nhóm sinh viên</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="app-layout">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+<main class="page-content">
+    <h1 class="h3 my-3">Nhóm sinh viên và đăng ký đề tài</h1>
+    <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+    <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <section th:unless="${manager}" class="card card-body mb-4">
+        <h2 class="h5">Tạo nhóm</h2>
+        <form th:action="@{/groups}" method="post" class="row g-2">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <div class="col-md-3">
+                <label class="form-label">Đợt đăng ký</label>
+                <select class="form-select" name="periodId" required>
+                    <option value="">Chọn đợt</option>
+                    <option th:each="period : ${periods}" th:if="${period.status == 'PUBLISHED'}"
+                            th:value="${period.periodId}" th:text="${period.periodName}"></option>
+                </select>
+            </div>
+            <div class="col-md-3"><label class="form-label">Mã nhóm</label><input class="form-control" name="groupCode" maxlength="30" required></div>
+            <div class="col-md-3"><label class="form-label">Tên nhóm</label><input class="form-control" name="groupName" maxlength="100" required></div>
+            <div class="col-md-3"><label class="form-label">Mã thành viên 2 (không bắt buộc)</label><input class="form-control" name="memberCodes"></div>
+            <div class="col-md-3"><label class="form-label">Mã thành viên 3 (không bắt buộc)</label><input class="form-control" name="memberCodes"></div>
+            <div class="col-12"><button class="btn btn-primary">Tạo nhóm (tài khoản hiện tại là nhóm trưởng)</button></div>
+        </form>
+    </section>
+
+    <section th:if="${manager}" class="mb-4">
+        <h2 class="h5">Đăng ký đề tài chờ duyệt</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead><tr><th>Mã đăng ký</th><th>Nhóm</th><th>Đề tài</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                <tr th:each="registration : ${pendingRegistrations}">
+                    <td th:text="${registration.registrationId}"></td>
+                    <td th:text="${registration.groupId}"></td>
+                    <td th:text="${registration.topicId}"></td>
+                    <td class="d-flex gap-2">
+                        <form th:action="@{/groups/registrations/{id}/approve(id=${registration.registrationId})}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <button class="btn btn-sm btn-success">Duyệt</button>
+                        </form>
+                        <form th:action="@{/groups/registrations/{id}/reject(id=${registration.registrationId})}" method="post" class="d-flex gap-1">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <input class="form-control form-control-sm" name="reason" placeholder="Lý do từ chối" required maxlength="500">
+                            <button class="btn btn-sm btn-danger">Từ chối</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(pendingRegistrations)}"><td colspan="4">Không có đăng ký đang chờ.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <h2 class="h5">Danh sách nhóm</h2>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead><tr><th>Mã nhóm</th><th>Tên nhóm</th><th>Đợt</th><th>Đề tài</th><th>Trạng thái</th><th>Thao tác nhóm</th></tr></thead>
+            <tbody>
+            <tr th:each="group : ${groups}">
+                <td th:text="${group.groupCode}"></td><td th:text="${group.groupName}"></td>
+                <td th:text="${group.periodId}"></td>
+                <td>
+                    <span th:text="${group.topicId == null ? 'Chưa có' : group.topicId}"></span>
+                    <div th:if="${!manager}" class="small text-muted">
+                        <div th:each="member : ${membersByGroup[group.groupId]}">
+                            <span th:text="${member.studentId}"></span>
+                            <span th:if="${member.leader}" class="badge text-bg-primary">Nhóm trưởng</span>
+                        </div>
+                        <div th:each="report : ${reportsByGroup[group.groupId]}">
+                            Báo cáo v<span th:text="${report.version}"></span>:
+                            <a th:href="${report.fileUrl}" th:text="${report.reportTitle}"></a>
+                        </div>
+                    </div>
+                </td>
+                <td th:text="${group.status}"></td>
+                <td th:unless="${manager}">
+                    <div th:if="${group.status == 'DRAFT' and leaderGroupIds.contains(group.groupId)}">
+                        <form th:action="@{/groups/{id}/register(id=${group.groupId})}" method="post" class="d-flex gap-2 mb-2">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <select class="form-select form-select-sm" name="topicId" required>
+                                <option value="">Chọn đề tài đã công bố</option>
+                                <option th:each="topic : ${topics}" th:if="${topic.periodId == group.periodId}"
+                                        th:value="${topic.topicId}" th:text="${topic.topicCode + ' - ' + topic.topicName}"></option>
+                            </select>
+                            <button class="btn btn-sm btn-primary">Đăng ký</button>
+                        </form>
+                    </div>
+                    <form th:if="${group.status == 'APPROVED' and leaderGroupIds.contains(group.groupId)}" th:action="@{/groups/{id}/reports(id=${group.groupId})}" method="post" class="row g-1">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <div class="col-12"><input class="form-control form-control-sm" name="title" placeholder="Tên báo cáo" required maxlength="200"></div>
+                        <div class="col-12"><input class="form-control form-control-sm" name="fileUrl" placeholder="Đường dẫn tệp báo cáo" required maxlength="500"></div>
+                        <div class="col-12"><input class="form-control form-control-sm" name="description" placeholder="Mô tả (không bắt buộc)" maxlength="500"></div>
+                        <div class="col-12"><button class="btn btn-sm btn-outline-primary">Nộp báo cáo</button></div>
+                    </form>
+                </td>
+                <td th:if="${manager}">—</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(groups)}"><td colspan="6">Chưa có nhóm.</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-3"><a class="btn btn-outline-secondary" href="/topics">Quản lý đề tài</a></div>
+</main>
+</div>
+</body>
+</html>

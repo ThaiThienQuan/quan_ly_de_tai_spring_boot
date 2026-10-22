@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trang chủ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="app-layout">
+    <aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
+<main class="page-content"><h1 class="h3">Trang chủ hệ thống</h1>
+    <p>Quản lý các đợt đăng ký, đề tài và công bố đề tài.</p>
+    <div class="d-flex gap-2 mb-4 flex-wrap">
+        <a th:if="${canManagePeriods}" class="btn btn-outline-primary" href="/periods">Quản lý đợt đăng ký</a>
+        <a class="btn btn-outline-primary" href="/topics">Quản lý đề tài</a>
+        <a th:if="${canManageGroups}" class="btn btn-outline-primary" href="/groups">Nhóm sinh viên và báo cáo</a>
+        <a th:if="${canManageReviews}" class="btn btn-outline-primary" href="/reviews">Hội đồng và chấm điểm</a>
+        <a th:if="${canViewResults}" class="btn btn-outline-primary" href="/reviews/results">Kết quả đánh giá</a>
+        <a th:if="${canViewNotifications}" class="btn btn-outline-primary" href="/notifications">Thông báo</a>
+        <a th:if="${canManageUsers}" class="btn btn-outline-primary" href="/users">Tài khoản</a>
+    </div>
+    <h2 class="h5">Đề tài đã công bố</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Mã đề tài</th>
+                <th>Tên đề tài</th>
+                <th>Mô tả</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="topic : ${topics}">
+                <td th:text="${topic.topicCode}"></td>
+                <td th:text="${topic.topicName}"></td>
+                <td th:text="${topic.description}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(topics)}">
+                <td colspan="3">Chưa có đề tài được công bố.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</div>
+</body>
+</html>

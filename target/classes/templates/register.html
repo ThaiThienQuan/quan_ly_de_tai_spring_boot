@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng ký tài khoản</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="bg-light">
+<main class="container py-5" style="max-width:760px">
+    <section class="card shadow-sm">
+        <div class="card-body p-4 p-md-5">
+            <h1 class="h3 mb-2">Đăng ký tài khoản sinh viên</h1>
+            <p class="text-muted mb-4">Tạo tài khoản để tham gia quản lý và đăng ký đề tài.</p>
+            <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+            <form th:action="@{/register}" method="post" class="row g-3">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="col-md-6">
+                    <label class="form-label" for="username">Tên đăng nhập</label>
+                    <input id="username" class="form-control" name="username" maxlength="50" autocomplete="username" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="fullName">Họ và tên</label>
+                    <input id="fullName" class="form-control" name="fullName" maxlength="100" autocomplete="name" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="email">Email</label>
+                    <input id="email" class="form-control" type="email" name="email" maxlength="100" autocomplete="email" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="phone">Số điện thoại</label>
+                    <input id="phone" class="form-control" name="phone" maxlength="20" autocomplete="tel">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="studentCode">Mã sinh viên</label>
+                    <input id="studentCode" class="form-control" name="studentCode" maxlength="20" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="className">Lớp</label>
+                    <input id="className" class="form-control" name="className" maxlength="50" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="major">Chuyên ngành</label>
+                    <input id="major" class="form-control" name="major" maxlength="100" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="password">Mật khẩu (ít nhất 8 ký tự)</label>
+                    <input id="password" class="form-control" type="password" name="password" minlength="8" autocomplete="new-password" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="confirmPassword">Xác nhận mật khẩu</label>
+                    <input id="confirmPassword" class="form-control" type="password" name="confirmPassword" minlength="8" autocomplete="new-password" required>
+                </div>
+                <div class="col-12 d-flex align-items-center gap-3">
+                    <button class="btn btn-primary">Tạo tài khoản</button>
+                    <a th:href="@{/login}">Đã có tài khoản? Đăng nhập</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</main>
+</body>
+</html>
