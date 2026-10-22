@@ -38,12 +38,22 @@
                     <option th:each="lecturer : ${lecturers}" th:value="${lecturer.lecturerId}" th:text="${lecturer.lecturerCode}"></option>
                 </select>
             </div>
-            <div class="col-md-8"><label class="form-label">Thành viên khác (chọn 1-3)</label>
-                <select class="form-select" name="otherLecturerIds" multiple>
-                    <option th:each="lecturer : ${lecturers}" th:value="${lecturer.lecturerId}" th:text="${lecturer.lecturerCode}"></option>
-                </select>
+            <div class="col-md-8"><fieldset>
+                <legend class="form-label fs-6">Thành viên khác (chọn 1-3)</legend>
+                <div class="row row-cols-1 row-cols-md-2 g-2">
+                    <div class="col" th:each="lecturer : ${lecturers}">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="otherLecturerIds"
+                                   th:id="'council-member-' + ${lecturer.lecturerId}"
+                                   th:value="${lecturer.lecturerId}">
+                            <label class="form-check-label"
+                                   th:for="'council-member-' + ${lecturer.lecturerId}"
+                                   th:text="${lecturer.lecturerCode}"></label>
+                        </div>
+                    </div>
+                </div>
                 <small class="text-muted">Tổng số gồm chủ tịch, thư ký và thành viên khác phải từ 3 đến 5.</small>
-            </div>
+            </fieldset></div>
             <div class="col-12"><button class="btn btn-primary">Tạo hội đồng</button></div>
         </form>
     </section>
@@ -65,8 +75,44 @@
         </form>
     </section>
 
-    <h2 class="h5">Danh sách hội đồng</h2>
-    <div class="table-responsive mb-4"><table class="table table-bordered">
+    <section th:unless="${manager}" class="mb-4">
+        <h2 class="h5">Hội đồng bạn tham gia</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+                <thead>
+                <tr><th>Mã hội đồng</th><th>Tên hội đồng</th><th>Đợt đăng ký</th>
+                    <th>Ngày báo cáo</th><th>Trạng thái</th><th>Giảng viên cùng hội đồng</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="membership : ${myCouncils}">
+                    <td th:text="${membership.council.councilCode}"></td>
+                    <td th:text="${membership.council.councilName}"></td>
+                    <td th:text="${membership.periodName}"></td>
+                    <td th:text="${membership.council.reportDate}"></td>
+                    <td th:text="${membership.council.status}"></td>
+                    <td>
+                        <ul class="mb-0">
+                            <li th:each="member : ${membership.members}">
+                                <span th:text="${member.fullName + ' (' + member.lecturerCode + ')'}"></span>
+                                <span th:switch="${member.role}">
+                                    <span th:case="'CHAIRMAN'" class="badge text-bg-primary">Chủ tịch</span>
+                                    <span th:case="'SECRETARY'" class="badge text-bg-success">Thư ký</span>
+                                    <span th:case="'MEMBER'" class="badge text-bg-secondary">Thành viên</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(myCouncils)}">
+                    <td colspan="6">Bạn chưa được phân công tham gia hội đồng nào.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <h2 class="h5" th:if="${manager}">Danh sách hội đồng</h2>
+    <div th:if="${manager}" class="table-responsive mb-4"><table class="table table-bordered">
         <thead><tr><th>Mã</th><th>Tên</th><th>Đợt</th><th>Ngày báo cáo</th><th>Trạng thái</th><th>Công bố điểm</th></tr></thead>
         <tbody>
         <tr th:each="council : ${councils}">

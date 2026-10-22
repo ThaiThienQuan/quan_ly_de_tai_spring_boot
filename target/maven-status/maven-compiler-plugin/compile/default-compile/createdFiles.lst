@@ -1,5 +1,7 @@
 vn\edu\student\controller\AccountController.class
+vn\edu\student\service\LecturerCouncilView.class
 vn\edu\student\controller\DepartmentController.class
 vn\edu\student\service\DepartmentService.class
 vn\edu\student\controller\NavigationModelAdvice.class
+vn\edu\student\service\LecturerCouncilView$Member.class
 vn\edu\student\service\AccountService.class

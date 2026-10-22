@@ -8,7 +8,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class ReviewService {
@@ -51,6 +55,46 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public List<Council> findAllCouncils() {
         return councilRepository.findAllByOrderByReportDateDesc();
+    }
+
+    @Transactional(readOnly = true)
+    public List<LecturerCouncilView> findCouncilsForLecturer(String username) {
+        Lecturer lecturer = lecturerFor(username);
+        List<CouncilMember> ownMemberships = councilMemberRepository.findByLecturerId(lecturer.getLecturerId());
+        List<Long> councilIds = ownMemberships.stream()
+            .map(CouncilMember::getCouncilId).distinct().toList();
+        if (councilIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, Council> councilsById = councilRepository.findAllById(councilIds).stream()
+            .collect(Collectors.toMap(Council::getCouncilId, Function.identity()));
+        List<CouncilMember> members = councilMemberRepository.findByCouncilIdIn(councilIds);
+        Map<Long, Lecturer> lecturersById = lecturerRepository.findAllById(members.stream()
+                .map(CouncilMember::getLecturerId).distinct().toList()).stream()
+            .collect(Collectors.toMap(Lecturer::getLecturerId, Function.identity()));
+        Map<Long, UserAccount> accountsById = userRepository.findAllById(lecturersById.values().stream()
+                .map(Lecturer::getUserId).distinct().toList()).stream()
+            .collect(Collectors.toMap(UserAccount::getUserId, Function.identity()));
+        Map<Long, String> periodNamesById = periodRepository.findAllById(councilsById.values().stream()
+                .map(Council::getPeriodId).distinct().toList()).stream()
+            .collect(Collectors.toMap(RegistrationPeriod::getPeriodId, RegistrationPeriod::getPeriodName));
+        Map<Long, List<LecturerCouncilView.Member>> membersByCouncil = members.stream()
+            .collect(Collectors.groupingBy(CouncilMember::getCouncilId, Collectors.mapping(member -> {
+                Lecturer councilLecturer = lecturersById.get(member.getLecturerId());
+                UserAccount account = accountsById.get(councilLecturer.getUserId());
+                return new LecturerCouncilView.Member(councilLecturer.getLecturerCode(),
+                    account.getFullName(), member.getRole());
+            }, Collectors.toList())));
+
+        return ownMemberships.stream()
+            .map(membership -> councilsById.get(membership.getCouncilId()))
+            .filter(council -> council != null)
+            .distinct()
+            .sorted(Comparator.comparing(Council::getReportDate).reversed())
+            .map(council -> new LecturerCouncilView(council, periodNamesById.get(council.getPeriodId()),
+                membersByCouncil.getOrDefault(council.getCouncilId(), List.of())))
+            .toList();
     }
 
     @Transactional(readOnly = true)

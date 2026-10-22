@@ -37,7 +37,9 @@ public class ReviewController {
     public String list(Authentication authentication, Model model) {
         boolean manager = hasRole(authentication, "ADMIN") || hasRole(authentication, "TRUONG_KHOA");
         model.addAttribute("manager", manager);
-        model.addAttribute("councils", reviewService.findAllCouncils());
+        model.addAttribute("councils", manager ? reviewService.findAllCouncils() : List.of());
+        model.addAttribute("myCouncils", manager ? List.of()
+            : reviewService.findCouncilsForLecturer(authentication.getName()));
         model.addAttribute("assignments", manager ? reviewService.findAllAssignments()
             : reviewService.findAssignmentsForLecturer(authentication.getName()));
         model.addAttribute("periods", periodService.findAll());
