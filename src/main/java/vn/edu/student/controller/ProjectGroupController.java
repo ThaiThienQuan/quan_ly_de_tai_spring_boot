@@ -3,6 +3,8 @@ package vn.edu.student.controller;
 import vn.edu.student.entity.ProjectGroup;
 import vn.edu.student.entity.GroupMember;
 import vn.edu.student.entity.ProjectReport;
+import vn.edu.student.entity.Topic;
+import vn.edu.student.service.GroupJoinOption;
 import vn.edu.student.service.ProjectGroupService;
 import vn.edu.student.service.RegistrationPeriodService;
 import vn.edu.student.service.TopicService;
@@ -32,10 +34,13 @@ public class ProjectGroupController {
     }
 
     @GetMapping
-    public String list(Authentication authentication, Model model) {
+    public String list(Authentication authentication, @RequestParam(required = false) Long topicId, Model model) {
         boolean manager = hasRole(authentication, "ADMIN") || hasRole(authentication, "TRUONG_KHOA");
         List<ProjectGroup> groups = manager ? groupService.findAllGroups()
             : groupService.findGroupsForUser(authentication.getName());
+        List<Topic> publishedTopics = topicService.findPublished();
+        Map<Long, List<Topic>> publishedTopicsByPeriod = publishedTopics.stream()
+            .collect(Collectors.groupingBy(Topic::getPeriodId));
         Map<Long, List<GroupMember>> membersByGroup = new LinkedHashMap<>();
         Map<Long, List<ProjectReport>> reportsByGroup = new LinkedHashMap<>();
         Set<Long> leaderGroupIds = manager ? Set.of() : groups.stream()
@@ -53,7 +58,13 @@ public class ProjectGroupController {
         }
         model.addAttribute("groups", groups);
         model.addAttribute("periods", periodService.findAll());
-        model.addAttribute("topics", topicService.findPublished());
+        model.addAttribute("publishedTopicsByPeriod", publishedTopicsByPeriod);
+        Topic selectedTopic = topicId == null ? null : publishedTopics.stream()
+            .filter(topic -> topic.getTopicId().equals(topicId)).findFirst().orElse(null);
+        model.addAttribute("selectedTopic", selectedTopic);
+        model.addAttribute("joinOptions", selectedTopic == null || manager
+            ? List.<GroupJoinOption>of()
+            : groupService.findGroupsForTopic(authentication.getName(), selectedTopic.getTopicId()));
         model.addAttribute("pendingRegistrations", manager ? groupService.findPendingRegistrations() : List.of());
         model.addAttribute("membersByGroup", membersByGroup);
         model.addAttribute("reportsByGroup", reportsByGroup);
@@ -86,6 +97,18 @@ public class ProjectGroupController {
             attributes.addFlashAttribute("errorMessage", exception.getMessage());
         }
         return "redirect:/groups";
+    }
+
+    @PostMapping("/{groupId}/join")
+    public String join(Authentication authentication, @PathVariable Long groupId, @RequestParam Long topicId,
+                       RedirectAttributes attributes) {
+        try {
+            groupService.joinGroup(authentication.getName(), groupId, topicId);
+            attributes.addFlashAttribute("successMessage", "Bạn đã tham gia nhóm thành công.");
+        } catch (IllegalArgumentException exception) {
+            attributes.addFlashAttribute("errorMessage", exception.getMessage());
+        }
+        return "redirect:/groups?topicId=" + topicId;
     }
 
     @PostMapping("/{groupId}/reports")

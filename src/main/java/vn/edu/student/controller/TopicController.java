@@ -28,6 +28,7 @@ public class TopicController {
     public String list(Authentication authentication, Model model) {
         boolean student = hasRole(authentication, "SINH_VIEN");
         model.addAttribute("topics", student ? topicService.findPublished() : topicService.findAll());
+        model.addAttribute("canJoin", student);
         model.addAttribute("canCreate", hasRole(authentication, "GIANG_VIEN") || hasRole(authentication, "ADMIN"));
         model.addAttribute("canReview", hasRole(authentication, "TRUONG_KHOA") || hasRole(authentication, "ADMIN"));
         return "topics/list";

@@ -59,6 +59,9 @@
                             <button class="btn btn-sm btn-success">Công bố
                             </button>
                         </form>
+                        <a th:if="${canJoin and topic.published and topic.status == 'APPROVED'}"
+                           class="btn btn-sm btn-primary"
+                           th:href="@{/groups(topicId=${topic.topicId})}">Tham gia</a>
                     </div>
                 </td>
             </tr>

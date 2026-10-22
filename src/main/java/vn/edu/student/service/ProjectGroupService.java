@@ -8,10 +8,14 @@ import java.time.LocalDateTime;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 public class ProjectGroupService {
+    private static final int MAX_GROUP_SIZE = 3;
+    private static final List<String> ACTIVE_TOPIC_REGISTRATION_STATUSES = List.of("PENDING", "APPROVED");
+
     private final UserAccountRepository userRepository;
     private final StudentRepository studentRepository;
     private final RegistrationPeriodRepository periodRepository;
@@ -42,6 +46,36 @@ public class ProjectGroupService {
         List<Long> groupIds = memberRepository.findByStudentId(student.getStudentId()).stream()
             .map(GroupMember::getGroupId).toList();
         return groupIds.isEmpty() ? List.of() : groupRepository.findByGroupIdInOrderByGroupIdDesc(groupIds);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GroupJoinOption> findGroupsForTopic(String username, Long topicId) {
+        Student student = studentFor(username);
+        Topic topic = getPublishedTopic(topicId);
+        boolean registrationOpen = isStudentRegistrationOpen(getPeriod(topic.getPeriodId()));
+        boolean alreadyInGroup = memberRepository.existsByStudentId(student.getStudentId());
+        List<Long> groupIds = registrationRepository
+            .findByTopicIdAndStatusIn(topicId, ACTIVE_TOPIC_REGISTRATION_STATUSES).stream()
+            .map(TopicRegistration::getGroupId).distinct().toList();
+        if (groupIds.isEmpty()) {
+            return List.of();
+        }
+
+        return groupRepository.findAllById(groupIds).stream()
+            .filter(group -> group.getPeriodId().equals(topic.getPeriodId()))
+            .sorted(Comparator.comparing(ProjectGroup::getGroupId).reversed())
+            .map(group -> {
+                List<GroupMember> members = memberRepository.findByGroupId(group.getGroupId());
+                int memberCount = members.size();
+                String unavailableReason = memberCount >= MAX_GROUP_SIZE
+                    ? "Nhóm đã đủ 3 thành viên."
+                    : alreadyInGroup ? "Bạn đã là thành viên của một nhóm khác."
+                    : !registrationOpen ? "Đợt đăng ký sinh viên hiện không mở."
+                    : null;
+                return new GroupJoinOption(group, memberCount, members,
+                    unavailableReason == null, unavailableReason);
+            })
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -158,6 +192,35 @@ public class ProjectGroupService {
     }
 
     @Transactional
+    public void joinGroup(String username, Long groupId, Long topicId) {
+        Student student = studentFor(username);
+        ProjectGroup group = groupRepository.findByIdForUpdate(groupId)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nhóm."));
+        Topic topic = getPublishedTopic(topicId);
+        if (!group.getPeriodId().equals(topic.getPeriodId())
+                || !registrationRepository.existsByGroupIdAndTopicIdAndStatusIn(
+                    groupId, topicId, ACTIVE_TOPIC_REGISTRATION_STATUSES)) {
+            throw new IllegalArgumentException("Nhóm này không đăng ký đề tài đã chọn.");
+        }
+        requireStudentRegistrationOpen(getPeriod(group.getPeriodId()));
+        if (!"DRAFT".equals(group.getStatus()) && !"APPROVED".equals(group.getStatus())) {
+            throw new IllegalArgumentException("Nhóm hiện không thể nhận thêm thành viên.");
+        }
+        if (memberRepository.countByGroupId(groupId) >= MAX_GROUP_SIZE) {
+            throw new IllegalArgumentException("Nhóm đã đủ 3 thành viên.");
+        }
+        if (memberRepository.existsByStudentId(student.getStudentId())) {
+            throw new IllegalArgumentException("Bạn đã là thành viên của một nhóm khác.");
+        }
+
+        GroupMember member = new GroupMember();
+        member.setGroupId(groupId);
+        member.setStudentId(student.getStudentId());
+        member.setLeader(false);
+        memberRepository.save(member);
+    }
+
+    @Transactional
     public void reviewRegistration(String reviewerUsername, Long registrationId, boolean approve, String reason) {
         TopicRegistration registration = registrationRepository.findById(registrationId)
             .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đăng ký đề tài."));
@@ -213,11 +276,25 @@ public class ProjectGroupService {
     }
 
     private void requireStudentRegistrationOpen(RegistrationPeriod period) {
-        LocalDateTime now = LocalDateTime.now();
-        if (!"PUBLISHED".equals(period.getStatus()) || now.isBefore(period.getStudentStartAt())
-                || now.isAfter(period.getStudentEndAt())) {
+        if (!isStudentRegistrationOpen(period)) {
             throw new IllegalArgumentException("Chức năng chỉ mở trong thời gian đăng ký của sinh viên.");
         }
+    }
+
+    private boolean isStudentRegistrationOpen(RegistrationPeriod period) {
+        LocalDateTime now = LocalDateTime.now();
+        return "PUBLISHED".equals(period.getStatus()) && period.getStudentStartAt() != null
+            && period.getStudentEndAt() != null && !now.isBefore(period.getStudentStartAt())
+            && !now.isAfter(period.getStudentEndAt());
+    }
+
+    private Topic getPublishedTopic(Long topicId) {
+        Topic topic = topicRepository.findById(topicId)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đề tài."));
+        if (!topic.isPublished() || !"APPROVED".equals(topic.getStatus())) {
+            throw new IllegalArgumentException("Chỉ được tham gia nhóm đăng ký đề tài đã công bố.");
+        }
+        return topic;
     }
 
     private Student studentFor(String username) {
