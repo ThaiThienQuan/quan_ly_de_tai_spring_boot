@@ -1,5 +1,6 @@
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\config\SecurityConfiguration.java
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\controller\AccountController.java
+D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\controller\DepartmentController.java
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\controller\HomeController.java
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\controller\NavigationModelAdvice.java
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\controller\NotificationController.java
@@ -46,6 +47,7 @@ D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\repository\TopicSuper
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\repository\UserAccountRepository.java
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\security\DatabaseUserDetailsService.java
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\service\AccountService.java
+D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\service\DepartmentService.java
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\service\NotificationService.java
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\service\ProjectGroupService.java
 D:\quan_ly_de_tai_spring_boot\src\main\java\vn\edu\student\service\RegistrationPeriodService.java

@@ -13,6 +13,7 @@
     <nav class="sidebar-nav" aria-label="Điều hướng chính">
         <a th:href="@{/}" class="sidebar-link"><span>⌂</span> Trang chủ</a>
         <a th:if="${canManagePeriods}" th:href="@{/periods}" class="sidebar-link"><span>▦</span> Đợt đăng ký</a>
+        <a th:if="${canManageDepartments}" th:href="@{/departments}" class="sidebar-link"><span>▧</span> Bộ môn</a>
         <a th:href="@{/topics}" class="sidebar-link"><span>◈</span> Đề tài</a>
         <a th:if="${canManageGroups}" th:href="@{/groups}" class="sidebar-link"><span>♧</span> Nhóm sinh viên</a>
         <a th:if="${canManageReviews}" th:href="@{/reviews}" class="sidebar-link"><span>✓</span> Hội đồng &amp; đánh giá</a>

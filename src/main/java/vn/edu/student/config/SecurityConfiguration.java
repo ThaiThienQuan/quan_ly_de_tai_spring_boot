@@ -20,6 +20,7 @@ public class SecurityConfiguration {
         http.authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/login", "/register", "/css/**", "/error").permitAll()
                 .requestMatchers("/periods/**").hasAnyRole("ADMIN", "TRUONG_KHOA")
+                .requestMatchers("/departments/**").hasAnyRole("ADMIN", "TRUONG_KHOA")
                 .requestMatchers("/topics/create").hasAnyRole("GIANG_VIEN", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/topics").hasAnyRole("GIANG_VIEN", "ADMIN")
                 .requestMatchers("/topics/*/approve", "/topics/*/publish").hasAnyRole("ADMIN", "TRUONG_KHOA")

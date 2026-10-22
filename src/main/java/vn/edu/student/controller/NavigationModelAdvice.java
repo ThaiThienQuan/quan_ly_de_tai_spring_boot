@@ -12,6 +12,11 @@ public class NavigationModelAdvice {
         return hasRole(authentication, "ADMIN") || hasRole(authentication, "TRUONG_KHOA");
     }
 
+    @ModelAttribute("canManageDepartments")
+    public boolean canManageDepartments(Authentication authentication) {
+        return hasRole(authentication, "ADMIN") || hasRole(authentication, "TRUONG_KHOA");
+    }
+
     @ModelAttribute("canManageGroups")
     public boolean canManageGroups(Authentication authentication) {
         return hasRole(authentication, "ADMIN") || hasRole(authentication, "TRUONG_KHOA")

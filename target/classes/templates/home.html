@@ -15,6 +15,7 @@
     <p>Quản lý các đợt đăng ký, đề tài và công bố đề tài.</p>
     <div class="d-flex gap-2 mb-4 flex-wrap">
         <a th:if="${canManagePeriods}" class="btn btn-outline-primary" href="/periods">Quản lý đợt đăng ký</a>
+        <a th:if="${canManageDepartments}" class="btn btn-outline-primary" th:href="@{/departments}">Quản lý bộ môn</a>
         <a class="btn btn-outline-primary" href="/topics">Quản lý đề tài</a>
         <a th:if="${canManageGroups}" class="btn btn-outline-primary" href="/groups">Nhóm sinh viên và báo cáo</a>
         <a th:if="${canManageReviews}" class="btn btn-outline-primary" href="/reviews">Hội đồng và chấm điểm</a>
